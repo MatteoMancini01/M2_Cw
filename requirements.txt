@@ -11,3 +11,7 @@ torch
 accelerate
 tqdm
 h5py
+preprocessor
+transformers
+wandb
+requests
