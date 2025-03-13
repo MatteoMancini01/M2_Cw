@@ -1,0 +1,2 @@
+<b>zero-shot</b>
+Zero-shot refers to a scenario is when a model is trained to categorise or regosnise objects or concepts without having seen any of those categories or objects, purely relying on pre-exisiting knowledge or semantic relationships.
