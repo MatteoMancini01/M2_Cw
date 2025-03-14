@@ -47,10 +47,84 @@ class Preprocessor:
         >>> data = np.array([1, 2, 3, 4, 5])
         >>> scaled_data, factor = scaling_operator(data, 0.9, 10)
         >>> print(scaled_data, factor)
-    """
+        """
 
         scaling_factor = np.quantile(data, quantile_val)/upper_limit
         scaled_data  = data/scaling_factor
 
         return scaled_data, scaling_factor
+
+
+    def array_to_string(data):
+        """
+        Converts a DataFrame containing prey and predator values into formatted strings.
+
+        This function groups the DataFrame by 'system_id' and converts each group's 
+        numerical data (prey and predator) into a single formatted string. 
+        Each pair is separated by a comma (","), and timesteps are separated by a semicolon (";").
+
+        Parameters:
+        -----------
+        data : pd.DataFrame
+            A DataFrame with at least three columns: 'system_id', 'prey', and 'predator'.
+
+        Returns:
+        --------
+        pd.Series
+            A Pandas Series where each index corresponds to a 'system_id' and the values 
+            are strings formatted as "prey, predator; prey, predator; ...".
+
+        Example:
+        --------
+        >>> import pandas as pd
+        >>> df = pd.DataFrame({
+        ...     "system_id": [0, 0, 1, 1],
+        ...     "prey": [3.7, 2.9, 4.5, 3.2],
+        ...     "predator": [4.1, 3.0, 2.8, 2.1]
+        ... })
+        >>> formatted_strings = array_to_string(df)
+        >>> print(formatted_strings[0])
+        '3.7,4.1;2.9,3.0'
+        >>> print(formatted_strings[1])
+        '4.5,2.8;3.2,2.1'
+        """
+        
+        formatted_strings = data.groupby("system_id").apply(
+            lambda group: ";".join([",".join(map(str, row)) for row in group[["prey", "predator"]].values])
+        )
+        
+        return formatted_strings
+
+    
+
+    def string_to_array(formatted_string):
+        """
+        Converts a formatted string of prey/predator values back into a NumPy array.
+
+        Parameters:
+        -----------
+        formatted_string : str
+            A string with values formatted as "prey, predator; prey, predator; ...".
+
+        Returns:
+        --------
+        np.ndarray
+            A NumPy array of shape (100, 2), where each row represents a timestep 
+            with prey and predator values.
+
+        Example:
+        --------
+        >>> formatted_str = "3.757031, 4.115786;2.928965, 3.083176;2.698359, 2.232228"
+        >>> array = string_to_array(formatted_str)
+        >>> print(array.shape)  # Output: (100, 2)
+        """
+        
+        # Split the string by semicolons to get each "prey, predator" pair
+        pairs = formatted_string.split(";")
+        
+        # Convert each pair into a tuple of float values
+        array = np.array([list(map(float, pair.split(","))) for pair in pairs])
+        
+        return array
+            
 
