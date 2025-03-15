@@ -50,7 +50,7 @@ model, tokenizer = load_qwen()
 
 def tokenize_time_series(formatted_strings):
     """
-    Tokenizes a Series of formatted time series strings using the Qwen tokenizer.
+    Tokenises a Series of formatted time series strings using the Qwen tokeniser.
 
     Parameters:
     -----------
@@ -60,7 +60,7 @@ def tokenize_time_series(formatted_strings):
     Returns:
     --------
     list of torch.Tensor
-        A list of tokenized tensors ready for model input.
+        A list of tokenised tensors ready for model input.
     
     Example:
     --------
