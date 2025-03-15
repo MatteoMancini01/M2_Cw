@@ -43,3 +43,33 @@ def load_qwen():
     model.lm_head.bias.requires_grad = True
 
     return model, tokenizer
+
+
+model, tokenizer = load_qwen()
+
+
+def tokenize_time_series(formatted_strings):
+    """
+    Tokenizes a Series of formatted time series strings using the Qwen tokenizer.
+
+    Parameters:
+    -----------
+    formatted_strings : pd.Series
+        A Pandas Series where each value is a formatted time series string.
+
+    Returns:
+    --------
+    list of torch.Tensor
+        A list of tokenized tensors ready for model input.
+    
+    Example:
+    --------
+    >>> tokenized_data = tokenize_time_series(formatted_strings)
+    >>> print(tokenized_data[0])  # Example of tokenized output
+    """
+    
+    tokenized_data = formatted_strings.apply(
+        lambda x: tokenizer(x, return_tensors="pt", padding=True, truncation=True)
+    )
+    
+    return tokenized_data
