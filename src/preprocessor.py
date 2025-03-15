@@ -100,6 +100,8 @@ class Preprocessor:
     def string_to_array(formatted_string):
         """
         Converts a formatted string of prey/predator values back into a NumPy array.
+        Ensures that only complete (prey, predator) pairs are included while
+        ignoring invalid leading/trailing semicolons or incomplete entries.
 
         Parameters:
         -----------
@@ -109,23 +111,31 @@ class Preprocessor:
         Returns:
         --------
         np.ndarray
-            A NumPy array of shape (100, 2), where each row represents a timestep 
+            A NumPy array of shape (N, 2), where each row represents a timestep 
             with prey and predator values.
-
-        Example:
-        --------
-        >>> formatted_str = "3.757031, 4.115786;2.928965, 3.083176;2.698359, 2.232228"
-        >>> array = string_to_array(formatted_str)
-        >>> print(array.shape)  # Output: (100, 2)
         """
-        
+
+        # Remove any leading or trailing semicolons
+        formatted_string = formatted_string.strip(";")
+
         # Split the string by semicolons to get each "prey, predator" pair
         pairs = formatted_string.split(";")
-        
-        # Convert each pair into a tuple of float values
-        array = np.array([list(map(float, pair.split(","))) for pair in pairs])
-        
-        return array
+
+        # Ensure no empty strings and filter out invalid entries
+        cleaned_pairs = []
+        for pair in pairs:
+            values = pair.split(",")  # Split each entry into numbers
+            values = [v.strip() for v in values if v.strip()]  # Remove extra spaces & filter empty
+
+            if len(values) == 2:  # Only keep valid pairs
+                try:
+                    cleaned_pairs.append(list(map(float, values)))  # Convert to float
+                except ValueError as e:
+                    print(f"Skipping invalid entry: {pair} → {e}")  # Debugging info
+
+        # Convert the cleaned list into a NumPy array
+        return np.array(cleaned_pairs)
+
             
 
     
