@@ -50,7 +50,7 @@ class Preprocessor:
         """
 
         scaling_factor = np.quantile(data, quantile_val)/upper_limit
-        scaled_data  = data/scaling_factor
+        scaled_data  = np.round(data/scaling_factor, 3) # After scaling round to 3 decimal places
 
         return scaled_data, scaling_factor
 
