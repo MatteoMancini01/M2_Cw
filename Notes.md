@@ -11,3 +11,16 @@ When using tokenised input, some sequences are shorter than others, so we pad th
 The `input_ids` are generated when you tokeinse text using transformer model's tokeniser.
 
 
+### Repo structure
+
+1. Introduction:
+    Expalein what the objective of the project is, plan of action, and execution
+
+2. Background:
+    Quick explenation of LLMTIME, Qwen2.5 and LoRA
+
+3. Baseline
+
+4. LoRA
+
+5. Conclusions
