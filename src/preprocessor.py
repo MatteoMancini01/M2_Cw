@@ -3,7 +3,7 @@ Importing required packages
 '''
 
 import numpy as np
-
+import h5py
 
 class Preprocessor:
     """ 
@@ -136,6 +136,134 @@ class Preprocessor:
         # Convert the cleaned list into a NumPy array
         return np.array(cleaned_pairs)
 
-            
+
+def load_and_preprocess(data):
+
+    """
+    Loads, scales, and formats Lotka-Volterra time series data for language model training.
+
+    This function reads population trajectories from an HDF5 file, applies quantile-based scaling,
+    splits the dataset into training and validation sets, and converts each system's trajectory 
+    into a semicolon-separated string format suitable for tokenization by language models.
+
+    Parameters:
+    -----------
+    data : str
+        Path to the HDF5 file containing the Lotka-Volterra simulation data. The file must include:
+        - 'trajectories': shape (N, T, 2), where N = number of systems, T = time steps,
+                          and the last dimension corresponds to (prey, predator).
+        - 'time': shape (T,), the time points corresponding to the trajectories.
+
+    Returns:
+    --------
+    train_texts : np.ndarray of str
+        Array of stringified time series for the training set (900 systems).
+        Each string represents prey and predator values per timestep, separated by semicolons,
+        e.g., "3.200,2.100;4.000,2.800;...".
+
+    val_texts : np.ndarray of str
+        Array of full-length validation sequences (100 systems), formatted as strings.
+
+    val_texts_70 : np.ndarray of str
+        Array of truncated validation sequences containing only the first 70 timesteps per system,
+        useful for forecasting or partial input evaluation scenarios.
+
+    Notes:
+    ------
+    - The data is scaled using the 90th percentile value (divided by 10) to normalize magnitudes.
+    - All floating-point values are rounded to 3 decimal places for string formatting.
+    - This format is intended for use with LLM-style tokenization pipelines (e.g., Qwen2.5).
+    """
+    
+    #Load data
+    with h5py.File(data, 'r') as f:
+        # Access the full dataset
+        trajectories = f['trajectories'][:]
+        time_points = f['time'][:]
+    
+    #Scaling data
+    scaling_factor = np.quantile(trajectories, 0.9)/10
+    trajectories_scaled  = np.round(trajectories/scaling_factor, 3) # After scaling round to 3 decimal places
+
+    # Split data into Training and Validation sets
+
+    traj_train = trajectories_scaled[:900, :, :]
+    traj_val = trajectories_scaled[-100:, :, :]
+    traj_val_70 = traj_val[:, :70, :]
+
+    # Convert arrays to string
+
+    train_texts = np.array([
+        ";".join([f"{prey:.3f},{pred:.3f}" for prey, pred in system])
+        for system in traj_train
+    ])
+    
+
+    val_texts = np.array([
+        ";".join([f"{prey:.3f},{pred:.3f}" for prey, pred in system])
+        for system in traj_val
+    ])
+
+    val_texts_70 = np.array([
+        ";".join([f"{prey:.3f},{pred:.3f}" for prey, pred in system])
+        for system in traj_val_70
+    ])
+
+    return train_texts, val_texts, val_texts_70
+
+
+
+def data_scale_split(data):
+    """
+    Loads, scales, and splits Lotka-Volterra time series data into training and validation sets.
+
+    This function reads simulation data from an HDF5 file, applies quantile-based scaling to normalize
+    population values, and returns split datasets for training and validation. It also includes a 
+    truncated version of the validation set with fewer time steps for use in forecasting tasks.
+
+    Parameters:
+    -----------
+    data : str
+        Path to the HDF5 file containing the Lotka-Volterra data. The file must contain:
+        - 'trajectories': A NumPy array of shape (N, T, 2), where N is the number of systems,
+          T is the number of time steps, and the last dimension represents (prey, predator) values.
+        - 'time': A 1D array of time points (not used directly but typically aligned with trajectories).
+
+    Returns:
+    --------
+    traj_train : np.ndarray
+        Scaled training trajectories for 900 systems, shape (900, T, 2).
+
+    traj_val : np.ndarray
+        Full-length validation trajectories for 100 systems, shape (100, T, 2).
+
+    traj_val_70 : np.ndarray
+        Truncated validation trajectories with only the first 70 time steps per system,
+        shape (100, 70, 2), useful for partial input prediction.
+
+    Notes:
+    ------
+    - Data is scaled using the 90th percentile of all values divided by 10.
+    - Scaling helps normalize across varying system magnitudes.
+    - All values are rounded to 3 decimal places after scaling.
+    """
+
+        #Load data
+    with h5py.File(data, 'r') as f:
+        # Access the full dataset
+        trajectories = f['trajectories'][:]
+        time_points = f['time'][:]
+    
+    #Scaling data
+    scaling_factor = np.quantile(trajectories, 0.9)/10
+    trajectories_scaled  = np.round(trajectories/scaling_factor, 3) # After scaling round to 3 decimal places
+
+    # Split data into Training and Validation sets
+
+    traj_train = trajectories_scaled[:900, :, :]
+    traj_val = trajectories_scaled[-100:, :, :]
+    traj_val_70 = traj_val[:, :70, :]
+
+    return traj_train, traj_val, traj_val_70
 
     

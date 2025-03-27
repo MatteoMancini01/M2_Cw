@@ -12,7 +12,33 @@ from .qwen import load_qwen
 
 # LoRA implementation
 class LoRALinear(nn.Module):
+    """
+    A module that injects a trainable low-rank adaptation into a frozen linear layer.
+
+    This is used for parameter-efficient fine-tuning (LoRA), where the base model weights
+    remain frozen and only a small number of parameters (A and B) are trained.
+
+    Parameters:
+    -----------
+    original_linear : nn.Linear
+        The linear layer to wrap with LoRA.
+    r : int
+        The rank of the low-rank decomposition (number of columns of A and rows of B).
+    alpha : int, optional
+        Scaling factor applied to the LoRA output. Defaults to r.
+
+    Forward:
+    --------
+    x : Tensor
+        Input to the linear layer.
+
+    Returns:
+    --------
+    Tensor
+        Output of the original linear layer + scaled LoRA component.
+    """
     def __init__(self, original_linear: nn.Linear, r: int, alpha: int = None):
+
         super().__init__()
         assert isinstance(original_linear, nn.Linear)
         self.original_linear = original_linear
@@ -47,7 +73,7 @@ for layer in model.model.layers:
 # ^These are the parts that will actually be trained!
 
 # Process the data into sequences of text
-train_texts, val_texts = load_and_preprocess("data/lotka_volterra_data.h5")
+train_texts, val_texts, val_texts_70 = load_and_preprocess("data/lotka_volterra_data.h5")
 
 # ^Each of these is a `list[str]` representing contiguous parts of the time series,
 #  in text form (using the LLMTIME scheme).
@@ -55,6 +81,28 @@ train_texts, val_texts = load_and_preprocess("data/lotka_volterra_data.h5")
 
 # Modified tokenization with chunking
 def process_sequences(texts, tokenizer, max_length=512, stride=256):
+
+    """
+    Tokenizes and chunks a list of text sequences into overlapping windows suitable
+    for language model training.
+
+    Parameters:
+    -----------
+    texts : list of str
+        Time series represented as text strings.
+    tokenizer : transformers.PreTrainedTokenizer
+        Tokenizer compatible with the target language model (e.g., Qwen2.5).
+    max_length : int
+        Maximum sequence length for model input.
+    stride : int
+        Step size to slide the window for overlapping chunks.
+
+    Returns:
+    --------
+    Tensor
+        A tensor of shape (N, max_length) where N is the number of generated chunks.
+    """
+
     all_input_ids = []
     for text in texts:
         # Apply Qwen's tokenization scheme to the text:

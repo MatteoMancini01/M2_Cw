@@ -24,3 +24,34 @@ The `input_ids` are generated when you tokeinse text using transformer model's t
 4. LoRA
 
 5. Conclusions
+
+### How `lora_skeleton.py` works
+- The original linear layer is frozen (non-trainable).
+- Two new trainable matrices `A` and `B` are introduced.
+- Output: `original(x) + (x @ A.T) @ B.T * (alpha/r)`
+
+
+`process_sequences` function, how it works:
+- Each long string is tokenised into IDs.
+- Then it's split into chunks of length `max_length`, overlapping by `stride`.
+- Shorter final chunks are padded.
+
+<b>Training loop</b>
+```bash
+    while steps < 10000:
+        for (batch,) in train_loader:
+            optimizer.zero_grad()
+            outputs = model(batch, labels=batch)
+            loss = outputs.loss
+            accelerator.backward(loss)
+            optimizer.step()
+            steps += 1
+```
+How it works:
+
+- Loops unitl `steps` hits 10000.
+- For each batch to tokenised sequences:
+    - Forward pass through the model 
+    - Compute loss against itself (casual LM objective)
+    - Backpropagate and update only LoRA weights
+    - Use `accelerate` to handle device placement and mixed precision efficiently

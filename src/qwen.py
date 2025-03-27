@@ -73,3 +73,32 @@ def tokenize_time_series(formatted_strings):
     )
     
     return tokenized_data
+
+def tokenize_time_series_np(formatted_strings):
+    """
+    Tokenizes a NumPy array of formatted time series strings using a Hugging Face-compatible tokenizer.
+
+    Parameters:
+    -----------
+    formatted_strings : np.ndarray or list of str
+        A 1D NumPy array or list where each element is a formatted time series string 
+        (e.g., "0.300,0.500;0.275,0.490;...").
+
+    Returns:
+    --------
+    list of dict
+        A list of dictionaries, each containing tokenized tensors 
+        (e.g., 'input_ids', 'attention_mask') suitable for model input using PyTorch.
+
+    Example:
+    --------
+    >>> tokenized_data = tokenize_time_series_np(formatted_strings)
+    >>> print(tokenized_data[0]['input_ids'].shape)  # Shape of tokenized input tensor
+    """
+    
+    tokenized_data = [
+        tokenizer(x, return_tensors="pt", padding=True, truncation=True)
+        for x in formatted_strings
+        ]
+    
+    return tokenized_data

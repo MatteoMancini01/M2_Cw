@@ -260,3 +260,70 @@ class PlotProject():
 
         plt.tight_layout()
         plt.show()
+
+
+
+def pred_vs_true_visualisation(decoded_prediction, true_values, index):
+
+    """
+    Plots predicted vs. true prey-predator population dynamics over time for a given system.
+
+    This function compares a model's predicted time series trajectory to the true trajectory 
+    for a specific system index, and visualizes the last 30 timesteps. The prey and predator 
+    values are plotted over a custom time range to illustrate alignment between predictions 
+    and actual dynamics.
+
+    Parameters:
+    -----------
+    decoded_prediction : list or np.ndarray
+        A list or array of predicted trajectories. Each element corresponds to one system
+        and should be a 2D array of shape (T, 2), where T is the number of timesteps,
+        and the two columns represent [prey, predator].
+
+    true_values : list or np.ndarray
+        A list or array of ground-truth trajectories with the same structure as `decoded_prediction`.
+
+    index : int
+        The index of the system to visualize.
+
+    Returns:
+    --------
+    None
+        Displays a matplotlib plot comparing the true and predicted prey/predator populations
+        over the last 30 time steps.
+    
+    """
+
+    dec_00 = decoded_prediction[index]
+    traj_00 = true_values[index] 
+    print('Decoded prediction shape:',dec_00.shape) 
+    print('True dataset shape:',traj_00.shape)
+
+    traj_0 = traj_00[-30:]
+    dec_0 = dec_00[-30:]
+    min_length = min(len(traj_0), len(dec_0))
+
+
+    time_step = np.linspace(140, 200, min_length)  # Adjust time range
+    prey_values = traj_0[:min_length, 0]  # Trim original prey
+    predator_values = traj_0[:min_length, 1]  # Trim original predator
+
+    predict_prey = dec_0[:min_length, 0]  # Trim predicted prey
+    predict_predator = dec_0[:min_length, 1]  # Trim predicted predator
+
+    # Create the plot
+    plt.figure(figsize=(10, 5))
+    plt.plot(time_step, prey_values, label="Original Prey", color="blue", linestyle="dashed")
+    plt.plot(time_step, predator_values, label="Original Predator", color="red", linestyle="dashed")
+
+    plt.plot(time_step, predict_prey, label="Predicted Prey", color="blue")
+    plt.plot(time_step, predict_predator, label="Predicted Predator", color="red")
+
+    # Labels and Title
+    plt.xlabel("Time Steps")
+    plt.ylabel("Population")
+    plt.title(f"Prey-Predator Dynamics Over Time, System_ID: {index}")
+    plt.legend()
+
+    # Show the plot
+    plt.show()
