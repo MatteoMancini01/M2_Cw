@@ -266,4 +266,30 @@ def data_scale_split(data):
 
     return traj_train, traj_val, traj_val_70
 
-    
+
+def sequence_length_array(tokenized_string):
+    """
+    Computes the sequence lengths for a list of tokenized inputs.
+
+    This function takes a list of tokenized input dictionaries (as returned by a Hugging Face tokenizer 
+    with `return_tensors="pt"`), and extracts the length (number of tokens) for each input sequence.
+
+    Parameters:
+    -----------
+    tokenized_string : list of dict
+        A list where each item is a dictionary containing tokenized data with at least the key 
+        'input_ids', whose value is a tensor of shape (1, sequence_length).
+
+    Returns:
+    --------
+    max_lengths : np.ndarray
+        A 1D NumPy array containing the sequence lengths (number of tokens) for each input.
+
+    Example:
+    --------
+    >>> tokenizer = AutoTokenizer.from_pretrained("Qwen/Qwen2.5-0.5B-Instruct")
+    >>> encoded = [tokenizer(text, return_tensors="pt") for text in text_list]
+    >>> lengths = sequence_length_array(encoded)
+    """
+    max_lengths = np.array([entry["input_ids"].shape[1] for entry in tokenized_string])
+    return max_lengths

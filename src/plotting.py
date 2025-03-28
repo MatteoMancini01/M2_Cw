@@ -67,12 +67,12 @@ class PlotProject():
         print('Decoded prediction shape:',dec_00.shape) 
         print('True dataset shape:',traj_00.shape)
         
-        traj_0 = traj_00[50:]
-        dec_0 = dec_00[50:]
+        traj_0 = traj_00[70:]
+        dec_0 = dec_00[70:]
         min_length = min(len(traj_0), len(dec_0))
 
         
-        time_step = np.linspace(100, 200, min_length)  # Adjust time range
+        time_step = np.linspace(140, 200, min_length)  # Adjust time range
         prey_values = traj_0[:min_length, 0]  # Trim original prey
         predator_values = traj_0[:min_length, 1]  # Trim original predator
 
@@ -90,7 +90,7 @@ class PlotProject():
         # Labels and Title
         plt.xlabel("Time Steps")
         plt.ylabel("Population")
-        plt.title(f"Prey-Predator Dynamics Over Time, System_ID: {index}")
+        plt.title(f"Prey-Predator Dynamics Over Time, System_ID: {index+900}")
         plt.legend()
 
         # Show the plot
@@ -143,7 +143,7 @@ class PlotProject():
 
         # Prey Error Histogram
         axes[0].hist(prey_errors, bins=bins, edgecolor="black", alpha=0.7)
-        axes[0].set_title(f"Prey Error Histogram (System {system_id})")
+        axes[0].set_title(f"Prey Error Histogram (System {system_id+900})")
         axes[0].set_xlabel("Error (y_true - y_pred)")
         axes[0].set_ylabel("Frequency")
         axes[0].axvline(x=np.mean(prey_errors), color="red", linestyle="dashed", label=f"Mean Error: {np.mean(prey_errors):.2f}")
@@ -151,7 +151,7 @@ class PlotProject():
 
         # Predator Error Histogram
         axes[1].hist(predator_errors, bins=bins, edgecolor="black", alpha=0.7)
-        axes[1].set_title(f"Predator Error Histogram (System {system_id})")
+        axes[1].set_title(f"Predator Error Histogram (System {system_id+900})")
         axes[1].set_xlabel("Error (y_true - y_pred)")
         axes[1].axvline(x=np.mean(predator_errors), color="red", linestyle="dashed", label=f"Mean Error: {np.mean(predator_errors):.2f}")
         axes[1].legend()
@@ -322,7 +322,7 @@ def pred_vs_true_visualisation(decoded_prediction, true_values, index):
     # Labels and Title
     plt.xlabel("Time Steps")
     plt.ylabel("Population")
-    plt.title(f"Prey-Predator Dynamics Over Time, System_ID: {index}")
+    plt.title(f"Prey-Predator Dynamics Over Time, System_ID: {index+900}")
     plt.legend()
 
     # Show the plot
