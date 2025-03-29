@@ -293,3 +293,5 @@ def sequence_length_array(tokenized_string):
     """
     max_lengths = np.array([entry["input_ids"].shape[1] for entry in tokenized_string])
     return max_lengths
+
+
