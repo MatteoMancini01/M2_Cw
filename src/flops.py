@@ -1,34 +1,71 @@
 
-# Extract model parameters
-num_heads = 14 # Number of attention heads 
-d_model = 896 # d_model hidden size
-num_layers = 24 # Number of Transformer layers
+def total_transformer_training_flops(num_steps, batch_size, seq_len, num_layers, d_model, num_heads, intermediate_dim, lora_rank=0):
+    """
+    Compute total FLOPs for training a Transformer with LoRA.
 
-def flops_mlp(num_layers, num_hidden, input_dim):
-    """Compute the FLOPs for a given MLP"""
-    flops = 0
-    layer_dims = [input_dim] + [num_hidden] * num_layers
+    Parameters:
+    -----------
+    num_steps : int
+        Total number of training steps.
+    batch_size : int
+        Number of sequences per batch.
+    seq_len : int
+        Sequence length.
+    num_layers : int
+        Number of Transformer layers.
+    d_model : int
+        Hidden size.
+    num_heads : int
+        Number of attention heads.
+    intermediate_dim : int
+        Dimension of the feedforward layer (usually 2* or 4* d_model for SwiGLU/FFN).
+    lora_rank : int
+        LoRA rank (0 to disable LoRA FLOPs).
 
-    for i in range(num_layers):
-        # matrix multiplication:
-        flops += (2 * layer_dims[i] - 1) * layer_dims[i + 1]
-        if i < num_layers - 1:
-            # ReLU activation (except last layer)
-            flops += layer_dims[i + 1]
+    Returns:
+    --------
+    total_flops : int
+        Estimated total FLOPs over the training run.
+    """
 
-    return flops
+    d_k = d_model // num_heads
+    total_flops = 0
 
-def flops_forward_pass(batch_size, num_layers, num_hidden, input_dim):
-    """Compute the FLOPs for a forward pass in the training loop."""
-    return batch_size * flops_mlp(num_layers, num_hidden, input_dim)
+    # Self-Attention FLOPs per layer
+    attn_proj = 3 * d_model * d_model * seq_len  # Q, K, V projections
+    qk_matmul = seq_len * d_k * seq_len          # QK^T
+    attn_weighted_v = seq_len * d_k * seq_len    # Attn × V
+    out_proj = d_model * d_model * seq_len       # Output projection
+    attention_flops = attn_proj + qk_matmul + attn_weighted_v + out_proj
 
-def flops_forward_and_back(batch_size, num_layers, num_hidden, input_dim):
-    # (We simplify things and assume backward = 2x forward, as per instruction in coursework)
-    return 3 * flops_forward_pass(batch_size, num_layers, num_hidden, input_dim)
+    # LoRA (if used): two low-rank projections per injected layer (Q, V)
+    lora_flops = 0
+    if lora_rank > 0:
+        lora_flops_q = 2 * lora_rank * d_model * seq_len
+        lora_flops_v = 2 * lora_rank * d_model * seq_len
+        lora_flops = lora_flops_q + lora_flops_v
 
-def total_flops(num_steps_training, batch_size, num_layers, num_hidden, input_dim):
-    """Total FLOPs for the experiment"""
-    return num_steps_training * flops_forward_and_back(batch_size, num_layers, num_hidden, input_dim)
+    # Feedforward FLOPs per layer (SwiGLU style)
+    ffn_proj1 = d_model * intermediate_dim * seq_len  # Linear for gate
+    ffn_proj2 = d_model * intermediate_dim * seq_len  # Linear for activation
+    ffn_act = intermediate_dim * seq_len              # Swish activation
+    ffn_mult = intermediate_dim * seq_len             # Gating mult
+    ffn_proj_out = intermediate_dim * d_model * seq_len
+    ffn_flops = ffn_proj1 + ffn_proj2 + ffn_act + ffn_mult + ffn_proj_out
+
+    # LayerNorm FLOPs (2 × d_model × seq_len per layer)
+    norm_flops = 2 * d_model * seq_len * 2
+
+    # Total FLOPs per sequence per layer
+    flops_per_layer = attention_flops + ffn_flops + norm_flops + lora_flops
+
+    # Multiply by number of layers and batch size
+    flops_per_step = flops_per_layer * num_layers * batch_size
+
+    # Account for forward + backward
+    total_flops = num_steps * flops_per_step * 3
+
+    return total_flops
 
 # For part 2b
 def compute_generation_flops(input_ids_list, max_lengths):
@@ -71,6 +108,10 @@ def compute_generation_flops(input_ids_list, max_lengths):
     >>> compute_generation_flops(input_ids_list, max_lengths)
     3.5e+12  # Example output (FLOPs count)
     """
+    # Extract model parameters
+    num_heads = 14 # Number of attention heads 
+    d_model = 896 # d_model hidden size
+    num_layers = 24 # Number of Transformer layers
 
     total_flops = 0
     
