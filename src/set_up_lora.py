@@ -270,7 +270,7 @@ def train_lora_model(model, tokenizer, lora_rank=4, learning_rate=1e-5, batch_si
 
 
 
-def evaluate_loss_perplexity_val(trained_model, tokenizer, val_texts, batch_size):
+def evaluate_loss_perplexity_val(trained_model, tokenizer, val_texts, batch_size,  max_length=512):
     """
     Computes average validation loss and perplexity for a fine-tuned language model.
 
@@ -313,7 +313,7 @@ def evaluate_loss_perplexity_val(trained_model, tokenizer, val_texts, batch_size
     """
     
 
-    val_input_ids = process_sequences(val_texts, tokenizer, max_length=512, stride=512)
+    val_input_ids = process_sequences(val_texts, tokenizer, max_length=max_length, stride=max_length)
 
     accelerator = Accelerator()
 
