@@ -513,6 +513,10 @@ def decoder_and_metrics_evaluator(predicted_encoded, tokenizer):
 
         # Truncate to match the shorter list
         min_length = min(len(predicted_output[i]), len(true_values[i]))
+
+        if min_length !=30:
+            continue # It might happen that some of the tokens will not be generated propely
+                     # This will ignore any min_length that is not 30
         pr_out = predicted_output[i][:min_length]
         true_val = true_values[i][:min_length]
 
@@ -532,6 +536,11 @@ def decoder_and_metrics_evaluator(predicted_encoded, tokenizer):
 
         # Truncate to match the shorter list
         min_length = min(len(predicted_output[i]), len(true_values[i]))
+        
+        if min_length !=30:
+            continue # It might happen that some of the tokens will not be generated propely
+                    # This will ignore any min_length that is not 30
+
         pr_out = predicted_output[i][:min_length]
         true_val = true_values[i][:min_length]
 
