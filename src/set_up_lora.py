@@ -242,8 +242,10 @@ def train_lora_model(model, tokenizer, lora_rank=4, learning_rate=1e-5, batch_si
     steps = 0
     final_loss = None
 
+    progress_bar = tqdm(train_loader, total = 500, desc= f"Training Progress Steps {steps}")
+
     while steps < train_steps:  # QPLPPP = 10,000 steps
-        for (batch,) in tqdm(train_loader, total=500, desc=f"Steps {steps}"):
+        for (batch,) in progress_bar:
 
             # Reset gradients
             optimizer.zero_grad()
@@ -260,10 +262,6 @@ def train_lora_model(model, tokenizer, lora_rank=4, learning_rate=1e-5, batch_si
 
             optimizer.step()
 
-            grad_threshold = 1e-6
-            collapse_patience = 5
-            collapse_counter = 0
-
 
             if steps % 500 == 0:
                 grad_norm = torch.norm(
@@ -274,21 +272,12 @@ def train_lora_model(model, tokenizer, lora_rank=4, learning_rate=1e-5, batch_si
                     ]),
                     2
                 ).item()
-                print(f"[Step {steps}] Loss: {loss.item():.4f} | Grad norm: {grad_norm:.4f}")
-
-            if grad_norm < grad_threshold:
-
-                collapse_counter += 1
-            else:
-                collapse_counter = 0
-
-            
-            if collapse_counter >= collapse_patience:
-                print(f"Early stopping at step {steps}: Gradient norm collapse!")
-
+                progress_bar.set_postfix(loss = f"{loss.item():.4}", grad_norm=f"{grad_norm:.4f}")
+                #tqdm.write(f"[Step {steps}] Loss: {loss.item():.4f} | Grad norm: {grad_norm:.4f}")
 
             # Step counter
             steps += 1
+            #progress_bar.set_postfix(loss = f"{loss.item():.4}", grad_norm=f"{grad_norm:.4f}")
 
             # Break loop after desired number of steps
             if steps >= train_steps:
