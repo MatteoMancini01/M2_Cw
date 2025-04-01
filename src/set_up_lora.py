@@ -165,56 +165,55 @@ class LoRALinear(nn.Module):
 def train_lora_model(model, tokenizer, lora_rank=4, learning_rate=1e-5, batch_size=4, max_ctx_length=512,train_steps=5000):
     
     """
-    Fine-tunes a Qwen2.5 language model on Lotka-Volterra time series data using LoRA and returns final training loss.
+    Fine-tunes a Qwen2.5 transformer model on Lotka-Volterra time series data using Low-Rank Adaptation (LoRA).
 
-    This function applies Low-Rank Adaptation (LoRA) to the self-attention query and 
-    value projections of a Qwen2.5 transformer model. It then trains the model using 
-    next-token prediction on tokenized time series data derived from time-series trajectories.
-    The training process is optimized using HuggingFace's `Accelerator` for efficient device handling.
+    This function injects trainable LoRA adapters into the query and value projections of the 
+    Qwen2.5 model’s self-attention layers, enabling parameter-efficient fine-tuning. The model 
+    is trained using next-token prediction on tokenized time series sequences, represented in 
+    language-like format. The training pipeline uses Hugging Face’s `Accelerator` for device management 
+    and supports gradient clipping and early stopping based on gradient norm collapse.
 
     Parameters:
     -----------
     model : transformers.PreTrainedModel
-        A pre-initialized Qwen2.5 model (e.g., from `load_qwen()`), which will be 
-        modified in-place by applying LoRA to its attention layers.
+        A pre-initialized Qwen2.5 model (e.g., from `load_qwen()`), which will be modified in-place 
+        by injecting LoRA adapters into its transformer layers.
 
     tokenizer : transformers.PreTrainedTokenizer
-        Tokenizer corresponding to the Qwen model. Used for encoding time-series strings 
-        into token ID sequences suitable for training.
+        Tokenizer compatible with the Qwen model, used to convert time series strings into 
+        token ID sequences.
 
     lora_rank : int, default=4
-        The rank of the LoRA low-rank adaptation matrices. Higher ranks increase model 
-        capacity and computational cost.
+        Rank of the LoRA decomposition. Higher ranks increase capacity but require more memory.
 
     learning_rate : float, default=1e-5
-        The learning rate for the Adam optimizer used during training.
+        Learning rate for the Adam optimizer during training.
 
     batch_size : int, default=4
-        The number of tokenized sequences processed per training batch.
+        Number of sequences processed per training batch.
 
     max_ctx_length : int, default=512
-        The maximum sequence length (in tokens) for each input segment passed to the model.
+        Maximum token sequence length per input sample.
 
     train_steps : int, default=5000
-        The total number of training steps to execute. Training will stop once this 
-        number of steps is reached, regardless of dataset size.
+        Total number of training steps to execute. Acts as a hard stop even if early stopping is not triggered.
 
     Returns:
     --------
     model : transformers.PreTrainedModel
-        The trained model with LoRA adapters applied. Returned in evaluation mode 
-        (`model.eval()` has been called) and ready for inference or further evaluation.
+        The fine-tuned model with LoRA adapters applied. Returned in evaluation mode (`model.eval()`).
 
     final_loss : float
-        The final training loss (cross-entropy) from the last processed batch. Useful 
-        for comparing model performance across hyperparameter configurations.
+        The cross-entropy loss of the final training batch. Useful for comparing configurations 
+        during hyperparameter search.
 
     Notes:
     ------
-    - The model is modified in-place; avoid passing in a previously LoRA-wrapped model unless guarded.
-    - Only the final batch loss is returned. If average or validation loss is desired, it should be 
-      computed separately.
-    - Assumes that the time-series data is available at 'data/lotka_volterra_data.h5'.
+    - Only LoRA layers and the final bias are trainable; all other model parameters are frozen.
+    - Gradient clipping is applied at each step with `max_norm=1.0` to prevent exploding gradients.
+    - Early stopping is triggered if the global gradient norm remains below `1e-6` for 5 consecutive steps.
+    - The function assumes Lotka-Volterra simulation data is available at `'data/lotka_volterra_data.h5'`.
+    - The model is modified in-place; do not reuse the same instance for multiple LoRA runs without resetting.
     """
 
     # Applay LoRA to model
@@ -244,7 +243,7 @@ def train_lora_model(model, tokenizer, lora_rank=4, learning_rate=1e-5, batch_si
     final_loss = None
 
     while steps < train_steps:  # QPLPPP = 10,000 steps
-        for (batch,) in tqdm(train_loader, desc=f"Steps {steps}"):
+        for (batch,) in tqdm(train_loader, total=500, desc=f"Steps {steps}"):
 
             # Reset gradients
             optimizer.zero_grad()
@@ -256,7 +255,37 @@ def train_lora_model(model, tokenizer, lora_rank=4, learning_rate=1e-5, batch_si
 
             # Backpropagation using Accelerator
             accelerator.backward(loss)
+
+            accelerator.clip_grad_norm_(model.parameters(), max_norm=1.0)
+
             optimizer.step()
+
+            grad_threshold = 1e-6
+            collapse_patience = 5
+            collapse_counter = 0
+
+
+            if steps % 500 == 0:
+                grad_norm = torch.norm(
+                    torch.stack([
+                        p.grad.detach().data.norm(2)
+                        for p in model.parameters()
+                        if p.grad is not None
+                    ]),
+                    2
+                ).item()
+                print(f"[Step {steps}] Loss: {loss.item():.4f} | Grad norm: {grad_norm:.4f}")
+
+            if grad_norm < grad_threshold:
+
+                collapse_counter += 1
+            else:
+                collapse_counter = 0
+
+            
+            if collapse_counter >= collapse_patience:
+                print(f"Early stopping at step {steps}: Gradient norm collapse!")
+
 
             # Step counter
             steps += 1
