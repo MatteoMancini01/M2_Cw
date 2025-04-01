@@ -19,3 +19,8 @@ my_decoded_predictions
 #%%
 val_traj
 PlotProject.plot_pred_vs_true(my_decoded_predictions, val_traj, 4)
+#%%
+
+total = 10**17
+
+result = total - ()
