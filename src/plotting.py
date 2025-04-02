@@ -328,48 +328,73 @@ def pred_vs_true_visualisation(decoded_prediction, true_values, index):
     # Show the plot
     plt.show()
 
-def grad_norm_loss_plot(loss_list, grad_norm_list):
+def grad_norm_loss_plot(loss_list, grad_norm_list, title = '', avg_val_loss = None):
     """
-    Plots training loss and gradient norm on a shared y-axis over training steps.
+    Plots training loss and gradient norm over training steps on a shared y-axis.
 
-    This function visualizes both the loss and the gradient norm across training steps
-    using a single y-axis and a unified legend for clarity. This style is ideal for 
-    reports or presentations where simplicity and visual harmony are preferred.
+    This function creates a line plot visualising the training loss and the L2 norm 
+    of the gradients at each training step. If provided, it also overlays a horizontal 
+    dashed line to represent the average validation loss, offering a clear reference 
+    point for model performance comparison.
 
     Parameters:
     -----------
     loss_list : list of float
-        List of training loss values collected at each step.
+        Training loss values collected at each step.
 
     grad_norm_list : list of float
-        List of gradient L2 norms collected at each training step.
+        Gradient norm (L2) values collected at each step.
+
+    title : str, optional
+        An optional title to annotate the plot (default is an empty string).
+
+    avg_val_loss : float, optional
+        Average validation loss to display as a dashed reference line. If None, 
+        the line is omitted.
 
     Returns:
     --------
     None
-        Displays a matplotlib line plot with shared y-axis and legend.
+        Displays a matplotlib plot comparing loss and gradient norm over training steps.
 
     Notes:
     ------
-    - Both lists should be the same length.
-    - Useful for observing learning behavior and training stability over time.
+    - The function assumes `loss_list` and `grad_norm_list` are of equal length.
+    - Adding the validation loss overlay is useful for evaluating generalisation performance.
+    - Helpful for debugging, monitoring training stability, or visualising learning trends.
 
     Example:
     --------
-    >>> grad_norm_loss_plot(loss_list, grad_norm_list)
+    >>> grad_norm_loss_plot(loss_list, grad_norm_list, title="Run A", avg_val_loss=0.35)
     """
-
 
     steps = list(range(len(loss_list)))
 
-    plt.figure(figsize=(10, 5))
-    plt.plot(steps, loss_list, label='Loss', color='blue')
-    plt.plot(steps, grad_norm_list, label='Gradient Norm', color='red')
+    if avg_val_loss != None:
+
+        plt.figure(figsize=(10, 5))
+        plt.plot(steps, loss_list, label='Loss', color='blue')
+        plt.plot(steps, grad_norm_list, label='Gradient Norm', color='red')
+        plt.axhline(y=avg_val_loss, color = 'black', linestyle = '--', label = 'Avg Val Loss')
+
+        plt.xlabel('Training Step')
+        plt.ylabel('Value')
+        plt.title(f'Training Loss and Gradient Norm Over Time {title}')
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()
     
-    plt.xlabel('Training Step')
-    plt.ylabel('Value')
-    plt.title('Training Loss and Gradient Norm Over Time')
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-    plt.show()
+    else:
+
+        plt.figure(figsize=(10, 5))
+        plt.plot(steps, loss_list, label='Loss', color='blue')
+        plt.plot(steps, grad_norm_list, label='Gradient Norm', color='red')
+        
+        plt.xlabel('Training Step')
+        plt.ylabel('Value')
+        plt.title(f'Training Loss and Gradient Norm Over Time {title}')
+        plt.legend()
+        plt.grid(True)
+        plt.tight_layout()
+        plt.show()

@@ -149,10 +149,10 @@ predictions_decoded0, predicted_output0, true_values0, MSE_values0, RMSE_values0
 # In[ ]:
 
 
-np.savez("experiment_results/trained_lora_3a_5000/predictions_decoded_trained_lora_3a.npz", *predictions_decoded0)
-MSE_loaded = np.save("experiment_results/trained_lora_3a_5000/MSE_values_3a.npy", np.array(MSE_values0))
-np.save('experiment_results/trained_lora_3a_5000/RMSE_values_3a', RMSE_values0)
-np.savez("experiment_results/trained_lora_3a_5000/error_per_system_5000.npz", *error_per_system0)
+#np.savez("experiment_results/trained_lora_3a_5000/predictions_decoded_trained_lora_3a.npz", *predictions_decoded0)
+#MSE_loaded = np.save("experiment_results/trained_lora_3a_5000/MSE_values_3a.npy", np.array(MSE_values0))
+#np.save('experiment_results/trained_lora_3a_5000/RMSE_values_3a', RMSE_values0)
+#np.savez("experiment_results/trained_lora_3a_5000/error_per_system_5000.npz", *error_per_system0)
 
 
 # ### Visualisation of results
@@ -231,7 +231,7 @@ for r in ranks:
         model, _ = load_qwen()
 
         # Train model and compute loss/perplexity
-        trained_model, final_loss, _, _ = train_lora_model(model, tokenizer, lora_rank=r, learning_rate=lr, train_steps=1000)
+        trained_model, final_loss, grad_norm_list, train_loss_list = train_lora_model(model, tokenizer, lora_rank=r, learning_rate=lr, train_steps=1000)
         ppl_train = np.exp(final_loss)
 
         # Compute validation loss and perplexity
@@ -254,6 +254,7 @@ for r in ranks:
         print(f"-> Train Loss: {final_loss:.4f}, Perplexity: {ppl_train:.2f}")
         print(f"-> Validation Loss: {val_loss:.4f}, Perplexity: {ppl_val:.2f}")
         print(f"-> Estimated Flops: {total_flops_estimate}")
+        grad_norm_loss_plot(train_loss_list, grad_norm_list, title=f'Learning Rate = {lr}, Rank = {r}', avg_val_loss=val_loss)
 
         # Clean up to free GPU memory
         del model
@@ -268,7 +269,7 @@ for r in ranks:
 # Saving results as a csv file
 HP_search_rlr_df = pd.DataFrame(results_rank_lr)
 print(HP_search_rlr_df)
-HP_search_rlr_df.to_csv("experiment_results/hp_tuning_results/hp_tun_rank_lr.csv")
+#HP_search_rlr_df.to_csv("experiment_results/hp_tuning_results/hp_tun_rank_lr.csv")
 
 
 # After determining best hyper parameters for "rank" and "learning rate", we can procede to determine which of the three context lengths $[128, 512, 768]$ perform the best for a maximun of 2000 RLPPP steps
@@ -296,7 +297,7 @@ for cl in context_lengths:
     # Load fresh model
     model, _ = load_qwen()
     # Train the model and compute loss
-    trained_model, final_loss, _, _ = train_lora_model(model, tokenizer, lora_rank=best_r, learning_rate=best_lr, max_ctx_length=cl, train_steps=1000)
+    trained_model, final_loss, grad_norm_list, train_loss_list= train_lora_model(model, tokenizer, lora_rank=best_r, learning_rate=best_lr, max_ctx_length=cl, train_steps=1000)
     ppl_train = np.exp(final_loss)
 
 
@@ -322,6 +323,8 @@ for cl in context_lengths:
     print(f"-> Train Loss: {final_loss:.4f}, Perplexity: {ppl_train:.2f}")
     print(f"-> Validation Loss: {val_loss:.4f}, Perplexity: {ppl_val:.2f}")
     print(f"-> Estimated Flops: {total_flops_estimate}")
+    grad_norm_loss_plot(train_loss_list, grad_norm_list, title=f'LR= {best_lr}, Rank = {best_r}, Context Length = {cl} ', avg_val_loss=val_loss)
+
 
     # Clean up to free GPU memory
     del model
@@ -337,7 +340,7 @@ for cl in context_lengths:
 HP_search_cl_df = pd.DataFrame(results_cl)
 print(HP_search_cl_df)
 
-HP_search_cl_df.to_csv("experiment_results/hp_tuning_results/hp_tun_cl.csv")
+#HP_search_cl_df.to_csv("experiment_results/hp_tuning_results/hp_tun_cl.csv")
 
 
 # # Part 3 (c)
@@ -449,10 +452,10 @@ predictions_decoded1, predicted_output1, true_values1, MSE_values1, RMSE_values1
 # In[ ]:
 
 
-np.savez("experiment_results/best_model_results/predictions_decoded_best.npz", *predictions_decoded1)
-MSE_loaded = np.save("experiment_results/best_model_results/MSE_values_best.npy", np.array(MSE_values1))
-np.save('experiment_results/best_model_results/RMSE_values_best', RMSE_values1)
-np.savez("experiment_results/best_model_results/error_per_system_best.npz", *error_per_system1)
+#np.savez("experiment_results/best_model_results/predictions_decoded_best.npz", *predictions_decoded1)
+#MSE_loaded = np.save("experiment_results/best_model_results/MSE_values_best.npy", np.array(MSE_values1))
+#np.save('experiment_results/best_model_results/RMSE_values_best', RMSE_values1)
+#np.savez("experiment_results/best_model_results/error_per_system_best.npz", *error_per_system1)
 
 
 # ### Visualisation
@@ -573,10 +576,10 @@ predictions_decoded2, predicted_output2, true_values2, MSE_values2, RMSE_values2
 # In[ ]:
 
 
-np.savez("experiment_results/raw_performance_experiment_results/predictions_decoded_best.npz", *predictions_decoded2)
-MSE_loaded = np.save("experiment_results/raw_performance_experiment_results/MSE_values_best.npy", np.array(MSE_values2))
-np.save('experiment_results/raw_performance_experiment_results/RMSE_values_best', RMSE_values2)
-np.savez("experiment_results/raw_performance_experiment_results/error_per_system_best.npz", *error_per_system2)
+#np.savez("experiment_results/raw_performance_experiment_results/predictions_decoded_best.npz", *predictions_decoded2)
+#MSE_loaded = np.save("experiment_results/raw_performance_experiment_results/MSE_values_best.npy", np.array(MSE_values2))
+#np.save('experiment_results/raw_performance_experiment_results/RMSE_values_best', RMSE_values2)
+#np.savez("experiment_results/raw_performance_experiment_results/error_per_system_best.npz", *error_per_system2)
 
 
 # In[ ]:
