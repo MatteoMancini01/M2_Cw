@@ -1,0 +1,24 @@
+name: m2_env
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy
+  - matplotlib
+  - joblib
+  - pandas
+  - scipy
+  - optuna
+  - scikit-learn
+  - ipython
+  - torch
+  - accelerate
+  - tqdm
+  - h5py
+  - requests
+  - pip
+  - pip:
+      - preprocessor
+      - transformers
+      - wandb
