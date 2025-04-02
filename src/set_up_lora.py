@@ -242,10 +242,10 @@ def train_lora_model(model, tokenizer, lora_rank=4, learning_rate=1e-5, batch_si
     steps = 0
     final_loss = None
 
-    progress_bar = tqdm(train_loader, total = 500, desc= f"Training Progress Steps {steps}")
+    #progress_bar = tqdm( train_steps, desc= f"Training Progress Steps {steps}", leave=True)
 
     while steps < train_steps:  # QPLPPP = 10,000 steps
-        for (batch,) in progress_bar:
+        for (batch,) in  tqdm( train_loader, total = train_steps + 1, desc= f"Training Progress Steps"):
 
             # Reset gradients
             optimizer.zero_grad()
@@ -272,12 +272,11 @@ def train_lora_model(model, tokenizer, lora_rank=4, learning_rate=1e-5, batch_si
                     ]),
                     2
                 ).item()
-                progress_bar.set_postfix(loss = f"{loss.item():.4}", grad_norm=f"{grad_norm:.4f}")
-                #tqdm.write(f"[Step {steps}] Loss: {loss.item():.4f} | Grad norm: {grad_norm:.4f}")
+                tqdm.write(f"[Step {steps}] Loss: {loss.item():.4f} | Grad norm: {grad_norm:.4f}")
 
             # Step counter
             steps += 1
-            #progress_bar.set_postfix(loss = f"{loss.item():.4}", grad_norm=f"{grad_norm:.4f}")
+           # progress_bar.update(1)
 
             # Break loop after desired number of steps
             if steps >= train_steps:
