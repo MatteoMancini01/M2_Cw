@@ -167,53 +167,55 @@ def train_lora_model(model, tokenizer, lora_rank=4, learning_rate=1e-5, batch_si
     """
     Fine-tunes a Qwen2.5 transformer model on Lotka-Volterra time series data using Low-Rank Adaptation (LoRA).
 
-    This function injects trainable LoRA adapters into the query and value projections of the 
-    Qwen2.5 model’s self-attention layers, enabling parameter-efficient fine-tuning. The model 
-    is trained using next-token prediction on tokenized time series sequences, represented in 
-    language-like format. The training pipeline uses Hugging Face’s `Accelerator` for device management 
-    and supports gradient clipping and early stopping based on gradient norm collapse.
+    This function injects LoRA adapters into the query and value projections of each attention layer 
+    of a Qwen2.5 model and fine-tunes only those parameters on tokenized time series sequences. 
+    The model is trained using a next-token prediction objective, with gradient clipping and logging 
+    of training dynamics for further analysis. The Hugging Face `Accelerator` library is used for 
+    mixed precision and device management.
 
     Parameters:
     -----------
     model : transformers.PreTrainedModel
-        A pre-initialized Qwen2.5 model (e.g., from `load_qwen()`), which will be modified in-place 
-        by injecting LoRA adapters into its transformer layers.
+        The Qwen2.5 model instance to be fine-tuned with LoRA adapters.
 
     tokenizer : transformers.PreTrainedTokenizer
-        Tokenizer compatible with the Qwen model, used to convert time series strings into 
-        token ID sequences.
+        Tokenizer compatible with the Qwen model to tokenize time series strings.
 
     lora_rank : int, default=4
-        Rank of the LoRA decomposition. Higher ranks increase capacity but require more memory.
+        Rank of the LoRA decomposition applied to the query and value projections.
 
     learning_rate : float, default=1e-5
-        Learning rate for the Adam optimizer during training.
+        Learning rate used by the Adam optimizer.
 
     batch_size : int, default=4
-        Number of sequences processed per training batch.
+        Batch size for training.
 
     max_ctx_length : int, default=512
-        Maximum token sequence length per input sample.
+        Maximum token sequence length for each input.
 
     train_steps : int, default=5000
-        Total number of training steps to execute. Acts as a hard stop even if early stopping is not triggered.
+        Total number of training steps to run. Training stops once this count is reached.
 
     Returns:
     --------
     model : transformers.PreTrainedModel
-        The fine-tuned model with LoRA adapters applied. Returned in evaluation mode (`model.eval()`).
+        The fine-tuned model with LoRA adapters, returned in evaluation mode.
 
     final_loss : float
-        The cross-entropy loss of the final training batch. Useful for comparing configurations 
-        during hyperparameter search.
+        The final training loss from the last batch, useful for comparison across runs.
+
+    grad_norm_list : list of float
+        List of gradient norm values recorded at each training step.
+
+    loss_list : list of float
+        List of loss values recorded at each training step.
 
     Notes:
     ------
-    - Only LoRA layers and the final bias are trainable; all other model parameters are frozen.
-    - Gradient clipping is applied at each step with `max_norm=1.0` to prevent exploding gradients.
-    - Early stopping is triggered if the global gradient norm remains below `1e-6` for 5 consecutive steps.
-    - The function assumes Lotka-Volterra simulation data is available at `'data/lotka_volterra_data.h5'`.
-    - The model is modified in-place; do not reuse the same instance for multiple LoRA runs without resetting.
+    - LoRA adapters are applied in-place to the attention layers. Do not reuse the same model without resetting.
+    - Only LoRA-injected layers and the final LM bias head are trainable; all other parameters remain frozen.
+    - Gradient clipping is applied with a `max_norm` of 2.0 to stabilize training.
+    - Gradient norms and losses are tracked at every step to enable downstream plotting and analysis.
     """
 
     # Applay LoRA to model
@@ -243,9 +245,12 @@ def train_lora_model(model, tokenizer, lora_rank=4, learning_rate=1e-5, batch_si
     final_loss = None
 
     #progress_bar = tqdm( train_steps, desc= f"Training Progress Steps {steps}", leave=True)
+    grad_norm_list = []
+    loss_list = []
+
 
     while steps < train_steps:  # QPLPPP = 10,000 steps
-        for (batch,) in  tqdm( train_loader, total = train_steps + 1, desc= f"Training Progress Steps"):
+        for (batch,) in  tqdm( train_loader, desc= f"Training Progress Steps {steps}"):
 
             # Reset gradients
             optimizer.zero_grad()
@@ -255,15 +260,27 @@ def train_lora_model(model, tokenizer, lora_rank=4, learning_rate=1e-5, batch_si
             loss = outputs.loss
             final_loss = loss.item()
 
+            loss_list.append(final_loss)
+
+
             # Backpropagation using Accelerator
             accelerator.backward(loss)
 
-            accelerator.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            accelerator.clip_grad_norm_(model.parameters(), max_norm=2.0)
 
             optimizer.step()
 
+            grad_norm_values = torch.norm(
+                torch.stack([
+                    p.grad.detach().data.norm(2)
+                    for p in model.parameters()
+                    if p.grad is not None
+                ]), 2).item()
+            
+            grad_norm_list.append(grad_norm_values)
 
-            if steps % 500 == 0:
+
+            if steps % len(train_loader) == 0:
                 grad_norm = torch.norm(
                     torch.stack([
                         p.grad.detach().data.norm(2)
@@ -272,7 +289,7 @@ def train_lora_model(model, tokenizer, lora_rank=4, learning_rate=1e-5, batch_si
                     ]),
                     2
                 ).item()
-                tqdm.write(f"[Step {steps}] Loss: {loss.item():.4f} | Grad norm: {grad_norm:.4f}")
+                print(f"[Step {steps}] Loss: {loss.item():.4f} | Grad norm: {grad_norm:.4f}")
 
             # Step counter
             steps += 1
@@ -283,7 +300,7 @@ def train_lora_model(model, tokenizer, lora_rank=4, learning_rate=1e-5, batch_si
                 break
     model.eval()
 
-    return model, final_loss
+    return model, final_loss, grad_norm_list, loss_list
 
 
 

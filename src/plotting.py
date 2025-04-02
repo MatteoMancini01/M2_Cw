@@ -327,3 +327,49 @@ def pred_vs_true_visualisation(decoded_prediction, true_values, index):
 
     # Show the plot
     plt.show()
+
+def grad_norm_loss_plot(loss_list, grad_norm_list):
+    """
+    Plots training loss and gradient norm on a shared y-axis over training steps.
+
+    This function visualizes both the loss and the gradient norm across training steps
+    using a single y-axis and a unified legend for clarity. This style is ideal for 
+    reports or presentations where simplicity and visual harmony are preferred.
+
+    Parameters:
+    -----------
+    loss_list : list of float
+        List of training loss values collected at each step.
+
+    grad_norm_list : list of float
+        List of gradient L2 norms collected at each training step.
+
+    Returns:
+    --------
+    None
+        Displays a matplotlib line plot with shared y-axis and legend.
+
+    Notes:
+    ------
+    - Both lists should be the same length.
+    - Useful for observing learning behavior and training stability over time.
+
+    Example:
+    --------
+    >>> grad_norm_loss_plot(loss_list, grad_norm_list)
+    """
+
+
+    steps = list(range(len(loss_list)))
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(steps, loss_list, label='Loss', color='blue')
+    plt.plot(steps, grad_norm_list, label='Gradient Norm', color='red')
+    
+    plt.xlabel('Training Step')
+    plt.ylabel('Value')
+    plt.title('Training Loss and Gradient Norm Over Time')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
