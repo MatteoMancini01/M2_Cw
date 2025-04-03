@@ -21,7 +21,7 @@ The two machines are quite far in terms of memory and computational power. I hav
 The reader is welcome to clone the repository and play with the codes, but beware, you need a high-level performance machine, with a minimum of RAM 32GB.  GPUs may help speeding up the training process, however between experiments it is recommended to empty GPUs cache. 
 
 
-I would like to acknowledge the invaluable assistance of ChatGPT-4 and Grammarly in the preparation of this project. The tools played a significant role in:
+I would like to acknowledge the assistance of ChatGPT-4 and Grammarly in the preparation of this project. The tools played a significant role in:
 
 - Debugging and resolving coding challenges encountered during the development of the Python package.
 - Providing insights and suggestions for improving the structure and functionality of the code.
