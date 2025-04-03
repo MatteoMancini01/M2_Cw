@@ -141,7 +141,7 @@ predicted_encoded0 = prediction_after_training(model_lora0, tokenizer, val_texts
 # In[ ]:
 
 
-predictions_decoded0, predicted_output0, true_values0, MSE_values0, RMSE_values0, error_per_system0 = decoder_and_metrics_evaluator(predicted_encoded, tokenizer)
+predictions_decoded0, predicted_output0, true_values0, MSE_values0, RMSE_values0, error_per_system0 = decoder_and_metrics_evaluator(predicted_encoded0, tokenizer)
 
 
 # Saving results.
