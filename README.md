@@ -28,6 +28,7 @@ I would like to acknowledge the assistance of ChatGPT-4 and Grammarly in the pre
 - Generating concise and accurate summaries of complex texts to enhance understanding and clarity.
 
 While ChatGPT-4 contributed significantly to streamlining the development process and improving the quality of outputs, all results were rigorously reviewed, tested, and refined to ensure their accuracy, relevance, and alignment with project objectives.
+
 ----------------------------------------------------
 # LoRA Fine-Tuning for Time Series with Qwen2.5-0.5B
 ----------------------------------------------------
