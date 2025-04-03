@@ -467,7 +467,7 @@ collective_plots(predicted_encoded1, tokenizer)
 grad_norm_loss_plot(loss_values1, grad_norm_values1) # printing loss and grad norm over training steps
 
 
-# # 15000 Steps Experiment
+# # 5000 Steps Experiment Repeated With Different HP Choice
 
 # In[2]:
 
@@ -490,7 +490,7 @@ import pandas as pd
 
 
 # Set seed
-torch.manual_seed(24)
+torch.manual_seed(23)
 torch.cuda.empty_cache() #Clean gpu memory for next experiment
 
 
@@ -500,7 +500,7 @@ torch.cuda.empty_cache() #Clean gpu memory for next experiment
 # Follecting from previus results
 
 r_opt = 8 # Optimal Rank
-lr_opt = 1e-4 # optimal Learning Rate
+lr_opt = 1e-5 # optimal Learning Rate
 cl_opt = 512 # Optimal Context Length
 
 
@@ -513,7 +513,7 @@ model_opt, tokenizer = load_qwen() # Loading Qwen2.5
 # In[ ]:
 
 
-model_opt_train2, loss_train2, grad_norm_values2, loss_values2 = train_lora_model(model_opt, tokenizer, lora_rank=r_opt, learning_rate=lr_opt, batch_size=4, max_ctx_length=cl_opt,train_steps=15000) # Training model
+model_opt_train2, loss_train2, grad_norm_values2, loss_values2 = train_lora_model(model_opt, tokenizer, lora_rank=r_opt, learning_rate=lr_opt, batch_size=4, max_ctx_length=cl_opt,train_steps=5000) # Training model
 
 
 # In[ ]:
@@ -536,7 +536,7 @@ num_layers = config.num_hidden_layers
 intermediate_dim = 2*d_model  # SwiGLU
 
 #  Computing total estimate of flops
-total_flops_for_best_model = total_transformer_training_flops(15000, 4, cl_opt, num_layers, d_model, num_heads, intermediate_dim, lora_rank=r_opt)
+total_flops_for_best_model = total_transformer_training_flops(5000, 4, cl_opt, num_layers, d_model, num_heads, intermediate_dim, lora_rank=r_opt)
 
 # collecting results
 collecting_results = [[loss_train2, ppl_best_train, 
@@ -554,7 +554,7 @@ print(best_model_results_df)
 
 # Save results
 
-best_model_results_df.to_csv("experiment_results/best_model_results/best_model_trval_loss_ppl.csv")
+#best_model_results_df.to_csv("experiment_results/tuned_lora_3c_5000/best_model_trval_loss_ppl.csv")
 
 
 # In[ ]:
@@ -576,10 +576,10 @@ predictions_decoded2, predicted_output2, true_values2, MSE_values2, RMSE_values2
 # In[ ]:
 
 
-#np.savez("experiment_results/raw_performance_experiment_results/predictions_decoded_best.npz", *predictions_decoded2)
-#MSE_loaded = np.save("experiment_results/raw_performance_experiment_results/MSE_values_best.npy", np.array(MSE_values2))
-#np.save('experiment_results/raw_performance_experiment_results/RMSE_values_best', RMSE_values2)
-#np.savez("experiment_results/raw_performance_experiment_results/error_per_system_best.npz", *error_per_system2)
+#np.savez("experiment_results/tuned_lora_3c_5000/predictions_decoded_best.npz", *predictions_decoded2)
+#MSE_loaded = np.save("experiment_results/tuned_lora_3c_5000/MSE_values_best.npy", np.array(MSE_values2))
+#np.save('experiment_results/tuned_lora_3c_5000/RMSE_values_best', RMSE_values2)
+#np.savez("experiment_results/tuned_lora_3c_5000/error_per_system_best.npz", *error_per_system2)
 
 
 # In[ ]:
